@@ -17,7 +17,7 @@ function readUsers() {
     const data = fs.readFileSync(USERS_FILE, "utf-8");
     return JSON.parse(data);
   } catch {
-    return []; // kalau file belum ada, return array kosong
+    return [];
   }
 }
 
@@ -26,7 +26,7 @@ function saveUsers(users) {
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 }
 
-// Generate random password (kalau mau generate backend)
+// Generate random password (credential)
 function generateRandomPassword(length = 12) {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let pass = "";
@@ -36,7 +36,7 @@ function generateRandomPassword(length = 12) {
   return pass;
 }
 
-// Register endpoint
+// Register user baru
 app.post("/register", (req, res) => {
   const { username } = req.body;
   if (!username || username.length < 3) {
@@ -49,17 +49,14 @@ app.post("/register", (req, res) => {
     return res.status(400).json({ error: "Username sudah terdaftar" });
   }
 
-  // Generate credential password
   const password = generateRandomPassword();
-
-  // Simpan IP client
   const ip = req.ip;
 
   const newUser = {
     username,
     password,
     ip,
-    subscriptionActive: false, // default belum subscribe
+    subscriptionActive: false, // default belum aktif
   };
 
   users.push(newUser);
@@ -68,7 +65,7 @@ app.post("/register", (req, res) => {
   return res.json({ message: "Akun berhasil dibuat", username, password });
 });
 
-// Login endpoint
+// Login user
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
@@ -76,22 +73,59 @@ app.post("/login", (req, res) => {
   }
 
   const users = readUsers();
-
   const user = users.find((u) => u.username === username);
 
-  if (!user) {
-    return res.status(401).json({ error: "User tidak ditemukan" });
-  }
+  if (!user) return res.status(401).json({ error: "User tidak ditemukan" });
 
-  // Cek password & IP
   if (user.password === password && user.ip === req.ip) {
     return res.json({ message: "Login berhasil", username, subscriptionActive: user.subscriptionActive });
   } else {
-    return res.status(401).json({ error: "Username atau password salah, atau IP tidak cocok" });
+    return res.status(401).json({ error: "Username/password salah atau IP tidak cocok" });
   }
 });
 
-// Server jalan
+// Logout + Hapus akun permanen
+app.delete("/logout/:username", (req, res) => {
+  const username = req.params.username;
+  const users = readUsers();
+
+  const newUsers = users.filter(u => u.username !== username);
+
+  if (newUsers.length === users.length) {
+    return res.status(404).json({ error: "User tidak ditemukan" });
+  }
+
+  saveUsers(newUsers);
+  res.json({ message: "User berhasil dihapus dan logout" });
+});
+
+// Update status subscription user (aktif/nonaktif)
+app.put("/subscription/:username", (req, res) => {
+  const username = req.params.username;
+  const { subscriptionActive } = req.body;
+
+  const users = readUsers();
+  const userIndex = users.findIndex(u => u.username === username);
+
+  if (userIndex === -1) return res.status(404).json({ error: "User tidak ditemukan" });
+
+  users[userIndex].subscriptionActive = !!subscriptionActive;
+  saveUsers(users);
+
+  res.json({ message: `Subscription untuk ${username} telah diperbarui`, subscriptionActive: users[userIndex].subscriptionActive });
+});
+
+// Cek IP user (opsional)
+app.get("/check-ip/:username", (req, res) => {
+  const username = req.params.username;
+  const users = readUsers();
+  const user = users.find(u => u.username === username);
+
+  if (!user) return res.status(404).json({ error: "User tidak ditemukan" });
+
+  res.json({ username, ip: user.ip });
+});
+
 app.listen(PORT, () => {
   console.log(`Server berjalan di http://localhost:${PORT}`);
 });
