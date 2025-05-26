@@ -36,52 +36,48 @@ function generateRandomPassword(length = 12) {
   return pass;
 }
 
-// Register user baru
+// Endpoint Register
 app.post("/register", (req, res) => {
-  const { username } = req.body;
+  const { username, password } = req.body;
   if (!username || username.length < 3) {
-    return res.status(400).json({ error: "Username harus minimal 3 karakter" });
+    return res.status(400).json({ error: "Username minimal 3 karakter" });
   }
 
   const users = readUsers();
 
   if (users.find((u) => u.username === username)) {
-    return res.status(400).json({ error: "Username sudah terdaftar" });
+    return res.status(400).json({ error: "Username sudah ada" });
   }
-
-  const password = generateRandomPassword();
-  const ip = req.ip;
 
   const newUser = {
     username,
     password,
-    ip,
-    subscriptionActive: false, // default belum aktif
+    ip: req.ip,
+    subscriptionActive: false,
   };
 
   users.push(newUser);
   saveUsers(users);
 
-  return res.json({ message: "Akun berhasil dibuat", username, password });
+  res.json({ message: "Akun berhasil dibuat", username });
 });
 
-// Login user
+// Endpoint Login
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
-  if (!username || !password) {
-    return res.status(400).json({ error: "Username dan password wajib diisi" });
-  }
-
   const users = readUsers();
-  const user = users.find((u) => u.username === username);
+  const user = users.find(u => u.username === username && u.password === password);
 
-  if (!user) return res.status(401).json({ error: "User tidak ditemukan" });
-
-  if (user.password === password && user.ip === req.ip) {
-    return res.json({ message: "Login berhasil", username, subscriptionActive: user.subscriptionActive });
-  } else {
-    return res.status(401).json({ error: "Username/password salah atau IP tidak cocok" });
+  if (!user) {
+    return res.status(401).json({ error: "Login gagal: user tidak ditemukan atau password salah" });
   }
+
+  // Cek IP juga kalau mau
+  if (user.ip !== req.ip) {
+    return res.status(403).json({ error: "Akses ditolak: IP tidak cocok" });
+  }
+
+  res.json({ message: "Login sukses", username, subscriptionActive: user.subscriptionActive });
 });
 
 // DELETE akun (logout + hapus akun)
