@@ -84,19 +84,22 @@ app.post("/login", (req, res) => {
   }
 });
 
-// Logout + Hapus akun permanen
-app.delete("/logout/:username", (req, res) => {
+// DELETE akun (logout + hapus akun)
+app.delete("/api/users/:username", (req, res) => {
   const username = req.params.username;
+  const ip = req.ip;
+
   const users = readUsers();
+  const userIndex = users.findIndex((u) => u.username === username && u.ip === ip);
 
-  const newUsers = users.filter(u => u.username !== username);
-
-  if (newUsers.length === users.length) {
-    return res.status(404).json({ error: "User tidak ditemukan" });
+  if (userIndex === -1) {
+    return res.status(404).json({ error: "User gak ditemukan atau IP gak cocok" });
   }
 
-  saveUsers(newUsers);
-  res.json({ message: "User berhasil dihapus dan logout" });
+  users.splice(userIndex, 1); // hapus user
+  saveUsers(users);
+
+  return res.json({ message: "Akun berhasil dihapus" });
 });
 
 // Update status subscription user (aktif/nonaktif)
