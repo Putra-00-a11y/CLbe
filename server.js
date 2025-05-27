@@ -36,9 +36,18 @@ function generateRandomPassword(length = 12) {
   return pass;
 }
 
-// Endpoint Register
+// Tambah fungsi generate random password di backend
+function generateRandomPassword(length = 10) {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let pass = "";
+  for(let i=0; i<length; i++) {
+    pass += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return pass;
+}
+
 app.post("/register", (req, res) => {
-  const { username, password } = req.body;
+  const { username } = req.body;
   if (!username || username.length < 3) {
     return res.status(400).json({ error: "Username minimal 3 karakter" });
   }
@@ -48,6 +57,8 @@ app.post("/register", (req, res) => {
   if (users.find((u) => u.username === username)) {
     return res.status(400).json({ error: "Username sudah ada" });
   }
+
+  const password = generateRandomPassword();
 
   const newUser = {
     username,
@@ -59,7 +70,7 @@ app.post("/register", (req, res) => {
   users.push(newUser);
   saveUsers(users);
 
-  res.json({ message: "Akun berhasil dibuat", username });
+  res.json({ message: "Akun berhasil dibuat", username, password });
 });
 
 // Endpoint Login
