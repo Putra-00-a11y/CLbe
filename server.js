@@ -36,16 +36,6 @@ function generateRandomPassword(length = 12) {
   return pass;
 }
 
-// Tambah fungsi generate random password di backend
-function generateRandomPassword(length = 10) {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let pass = "";
-  for(let i=0; i<length; i++) {
-    pass += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return pass;
-}
-
 app.post("/register", (req, res) => {
   const { username } = req.body;
   if (!username || username.length < 3) {
