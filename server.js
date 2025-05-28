@@ -103,8 +103,9 @@ app.delete("/api/users/delete", (req, res) => {
   const userIndex = users.findIndex((u) =>
     u.username === username &&
     u.password === password &&
-    u.deviceInfo?.userAgent === deviceInfo.userAgent // atau lebih dari 1 validasi
-  );
+    u.deviceInfo?.userAgent === deviceInfo.userAgent &&
+    u.deviceInfo?.platform === deviceInfo.platform
+  );  
 
   if (userIndex === -1) {
     return res.status(404).json({ error: "User gak valid atau device gak cocok" });
