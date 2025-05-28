@@ -81,21 +81,37 @@ app.post("/login", (req, res) => {
   res.json({ message: "Login sukses", username, subscriptionActive: user.subscriptionActive });
 });
 
-// DELETE akun (logout + hapus akun)
-app.delete("/api/users/:username", (req, res) => {
-  const username = req.params.username;
-  const ip = req.ip;
+// Simpan info device publik saat login
+app.post("/api/public-device", (req, res) => {
+  const { username, platform, userAgent, loginTime } = req.body;
 
-  const users = readUsers();
-  const userIndex = users.findIndex((u) => u.username === username && u.ip === ip);
-
-  if (userIndex === -1) {
-    return res.status(404).json({ error: "User gak ditemukan atau IP gak cocok" });
+  if (!username || !platform || !userAgent) {
+    return res.status(400).json({ error: "Data device kurang lengkap" });
   }
 
-  users.splice(userIndex, 1); // hapus user
-  saveUsers(users);
+  const devices = readPublicDevices(); // ambil dari public-device.json
+  devices.push({ username, platform, userAgent, loginTime });
+  savePublicDevices(devices);
 
+  res.json({ message: "Device info tersimpan" });
+});
+
+app.delete("/api/users/delete", (req, res) => {
+  const { username, password, deviceInfo } = req.body;
+
+  const users = readUsers();
+  const userIndex = users.findIndex((u) =>
+    u.username === username &&
+    u.password === password &&
+    u.deviceInfo?.userAgent === deviceInfo.userAgent // atau lebih dari 1 validasi
+  );
+
+  if (userIndex === -1) {
+    return res.status(404).json({ error: "User gak valid atau device gak cocok" });
+  }
+
+  users.splice(userIndex, 1);
+  saveUsers(users);
   return res.json({ message: "Akun berhasil dihapus" });
 });
 
