@@ -63,22 +63,24 @@ app.post("/register", (req, res) => {
   res.json({ message: "Akun berhasil dibuat", username, password });
 });
 
-// Endpoint Login
+// login endpoint
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
   const users = readUsers();
-  const user = users.find(u => u.username === username && u.password === password);
 
-  if (!user) {
-    return res.status(401).json({ error: "Login gagal: user tidak ditemukan atau password salah" });
-  }
+  const user = users.find((u) => u.username === username && u.password === password);
+  if (!user) return res.status(401).json({ error: "Login gagal" });
 
-  // Cek IP juga kalau mau
-  if (user.ip !== req.ip) {
-    return res.status(403).json({ error: "Akses ditolak: IP tidak cocok" });
-  }
+  // SIMPAN deviceInfo KE DALAM DATA USER:
+  user.deviceInfo = {
+    userAgent: req.headers['user-agent'],
+    platform: req.body.platform, // kirim platform dari FE kalau perlu
+    loginTime: new Date().toISOString()
+  };
 
-  res.json({ message: "Login sukses", username, subscriptionActive: user.subscriptionActive });
+  saveUsers(users);
+
+  return res.json({ subscriptionActive: user.subscriptionActive });
 });
 
 // Simpan info device publik saat login
