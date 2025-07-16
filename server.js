@@ -2,7 +2,6 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const fs = require("fs");
 const webpush = require("web-push");
-const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
 
