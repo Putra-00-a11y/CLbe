@@ -1,6 +1,8 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const fs = require("fs");
+const webpush = require("web-push");
+const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
 
@@ -20,6 +22,42 @@ function readUsers() {
     return [];
   }
 }
+
+const vapidKeys = webpush.generateVAPIDKeys(); // Generate sekali saja
+webpush.setVapidDetails(
+  "mailto:psoputt@gmail.com",
+  "BKPDh5hHI56Ws4cT6wLg_4zmmsZjWPfvo5dwtFfnxr6rXH14Jf1BDMG2So_6JjDE-QuG3oW_DSiM-RBu9-MEu6k",
+  "Oy6fWtZXL1wLl8dhNaoNBBGfAvm-EymZO9xs1XEIgPQ"
+);
+
+// Simpan ke file atau DB
+const notifys = [];
+
+app.post("/subscribe", (req, res) => {
+  const sub = req.body;
+  notifys.push(sub);
+  res.status(201).json({});
+});
+
+app.post("/sendNotification", (req, res) => {
+  const payload = JSON.stringify({
+    title: req.body.title,
+    body: req.body.body
+  });
+
+  notifys.forEach(sub => {
+    webpush.sendNotification(sub, payload).catch(err => {
+      console.error("Notif gagal:", err);
+    });
+  });
+
+  res.json({ status: "OK" });
+});
+
+app.get("/notifys", (req, res) => {
+  res.json(notifys);
+});
+
 
 // Simpan data user ke file
 function saveUsers(users) {
